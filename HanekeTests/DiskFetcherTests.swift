@@ -144,7 +144,7 @@ class DiskFetcherTests: DiskTestCase {
         let path = self.writeData(data)
         let expectation = self.expectationWithDescription(self.name!)
         let cache = Cache<NSData>(name: self.name!)
-        let format = Format<NSData>(name: self.name!)
+        let format = Format<NSData>(name: self.name!, diskCachePath: HanekeGlobals.getDefaultCacheBase(self.name!, formatName: self.name!))
         cache.addFormat(format)
         
         cache.fetch(path: path, formatName: format.name, failure: {_ in

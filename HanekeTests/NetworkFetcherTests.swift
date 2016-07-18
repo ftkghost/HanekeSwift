@@ -254,7 +254,7 @@ class NetworkFetcherTests: XCTestCase {
         })
         let expectation = self.expectationWithDescription(self.name!)
         let cache = Cache<NSData>(name: self.name!)
-        let format = Format<NSData>(name: self.name!)
+        let format = Format<NSData>(name: self.name!, diskCachePath: HanekeGlobals.getDefaultCacheBase(self.name!, formatName: self.name!))
         cache.addFormat(format)
 
         cache.fetch(URL: URL, formatName: format.name, failure: {_ in

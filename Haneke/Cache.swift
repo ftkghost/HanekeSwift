@@ -39,7 +39,13 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
     
     var memoryWarningObserver : NSObjectProtocol!
     
-    public init(name: String) {
+    public convenience init(name: String) {
+        let defaultCachePath = HanekeGlobals.getDefaultCacheBase(name, formatName: HanekeGlobals.Cache.OriginalFormatName)
+        let format = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName, diskCachePath: defaultCachePath)
+        self.init(name: name, format: format)
+    }
+    
+    public init(name: String, format defaultFormat: Format<T>) {
         self.name = name
         
         let notifications = NSNotificationCenter.defaultCenter()
@@ -51,9 +57,7 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
                 self.onMemoryWarning()
             }
         )
-        
-        let originalFormat = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName)
-        self.addFormat(originalFormat)
+        self.addFormat(defaultFormat)
     }
     
     deinit {
@@ -143,12 +147,15 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
             if dispatch_group_wait(group, timeout) != 0 {
                 Log.error("removeAll timed out waiting for disk caches")
             }
-            let path = self.cachePath
-            do {
-                try NSFileManager.defaultManager().removeItemAtPath(path)
-            } catch {
-                Log.error("Failed to remove path \(path)", error as NSError)
-            }
+            // Should we delete disk cache folder?
+//            for (_, (_, _, diskCache)) in self.formats {
+//                let path = diskCache.path
+//                do {
+//                    try NSFileManager.defaultManager().removeItemAtPath(path)
+//                } catch {
+//                    Log.error("Failed to remove path \(path)", error as NSError)
+//                }
+//            }
             if let completion = completion {
                 dispatch_async(dispatch_get_main_queue()) {
                     completion()
@@ -162,7 +169,7 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
     public var size: UInt64 {
         var size: UInt64 = 0
         for (_, (_, _, diskCache)) in self.formats {
-            dispatch_sync(diskCache.cacheQueue) { size += diskCache.size }
+            size += diskCache.size
         }
         return size
     }
@@ -179,30 +186,21 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
 
     var formats : [String : (Format<T>, NSCache, DiskCache)] = [:]
     
-    public func addFormat(format : Format<T>) {
+    public func addFormat(format : Format<T>) -> Bool {
         let name = format.name
-        let formatPath = self.formatPath(formatName: name)
         let memoryCache = NSCache()
-        let diskCache = DiskCache(path: formatPath, capacity : format.diskCapacity)
-        self.formats[name] = (format, memoryCache, diskCache)
-    }
-    
-    // MARK: Internal
-    
-    lazy var cachePath: String = {
-        let basePath = DiskCache.basePath()
-        let cachePath = (basePath as NSString).stringByAppendingPathComponent(self.name)
-        return cachePath
-    }()
-    
-    func formatPath(formatName formatName: String) -> String {
-        let formatPath = (self.cachePath as NSString).stringByAppendingPathComponent(formatName)
-        do {
-            try NSFileManager.defaultManager().createDirectoryAtPath(formatPath, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            Log.error("Failed to create directory \(formatPath)", error as NSError)
+        memoryCache.totalCostLimit = format.memCapacity
+        memoryCache.countLimit = format.memMaxObjectCount
+        let diskCache = DiskCache(path: format.diskCachePath, capacity: format.diskCapacity)
+        if let _ = self.formats[name] {
+            // Duplicate format
+            return false
         }
-        return formatPath
+        else {
+
+            self.formats[name] = (format, memoryCache, diskCache)
+            return true
+        }
     }
     
     // MARK: Private

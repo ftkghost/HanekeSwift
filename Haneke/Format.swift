@@ -11,16 +11,26 @@ import UIKit
 public struct Format<T> {
     
     public let name: String
-    
+
+    // Default: unlimited memory cache size. See NSCache.totalCostLimit
+    public let memCapacity: Int
+    // Default: unlimited max object count. See NSCache.countLimit
+    public let memMaxObjectCount: Int
+
+    public let diskCachePath: String
+
     public let diskCapacity : UInt64
     
     public var transform : ((T) -> (T))?
     
     public var convertToData : (T -> NSData)?
 
-    public init(name: String, diskCapacity : UInt64 = UINT64_MAX, transform: ((T) -> (T))? = nil) {
+    public init(name: String, diskCachePath: String, diskCapacity : UInt64 = UINT64_MAX, memCapacity: Int = 0, memMaxCount: Int = 0, transform: ((T) -> (T))? = nil) {
         self.name = name
+        self.diskCachePath = diskCachePath
         self.diskCapacity = diskCapacity
+        self.memCapacity = memCapacity
+        self.memMaxObjectCount = memMaxCount
         self.transform = transform
     }
     

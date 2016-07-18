@@ -57,7 +57,7 @@ class FetcherTests: XCTestCase {
         let data = NSData.dataWithLength(1)
         let expectation = self.expectationWithDescription(self.name!)
         let cache = Cache<NSData>(name: self.name!)
-        let format = Format<NSData>(name: self.name!)
+        let format = Format<NSData>(name: self.name!, diskCachePath: HanekeGlobals.getDefaultCacheBase(self.name!, formatName: self.name!))
         cache.addFormat(format)
         
         cache.fetch(key: self.name!, value: data, formatName: format.name) {
