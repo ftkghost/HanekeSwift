@@ -169,7 +169,8 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
     public var size: UInt64 {
         var size: UInt64 = 0
         for (_, (_, _, diskCache)) in self.formats {
-            size += diskCache.size
+            // use disk cache queue to make sure no data in disk cache queue.
+            dispatch_sync(diskCache.cacheQueue) { size += diskCache.size }
         }
         return size
     }
