@@ -14,7 +14,7 @@ class FormatTests: XCTestCase {
 
     func testDefaultInit() {
         let name = self.name!
-        let sut = Format<UIImage>(name: name)
+        let sut = Format<UIImage>(name: name, diskCachePath: "")
         
         XCTAssertEqual(sut.name, name)
         XCTAssertEqual(sut.diskCapacity, UINT64_MAX)
@@ -22,13 +22,13 @@ class FormatTests: XCTestCase {
     }
     
     func testIsIdentity_WithoutTransform_ExpectTrue() {
-        let sut = Format<UIImage>(name: self.name!)
+        let sut = Format<UIImage>(name: self.name!, diskCachePath: "")
         
         XCTAssertTrue(sut.isIdentity)
     }
     
     func testIsIdentity_WithTransform_ExpectFalse() {
-        let sut = Format<UIImage>(name: self.name!, transform: { return $0 })
+        let sut = Format<UIImage>(name: self.name!, diskCachePath: "", transform: { return $0 })
         
         XCTAssertFalse(sut.isIdentity)
     }

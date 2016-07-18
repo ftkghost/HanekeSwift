@@ -11,6 +11,8 @@ import UIKit
 public extension HanekeGlobals {
     
     public struct UIKit {
+
+        private static var sCacheDir: String!
         
         static func formatWithSize(_ size : CGSize, scaleMode : ImageResizer.ScaleMode, allowUpscaling: Bool = true) -> Format<UIImage> {
             let name = "auto-\(size.width)x\(size.height)-\(scaleMode.rawValue)"
@@ -18,8 +20,10 @@ public extension HanekeGlobals {
             if let (format,_,_) = cache.formats[name] {
                 return format
             }
-            
+            let defaultCachePath = HanekeGlobals.getDefaultCacheBase(Shared.imageCache.name, formatName: name)
+
             var format = Format<UIImage>(name: name,
+                diskCachePath: defaultCachePath,
                 diskCapacity: HanekeGlobals.UIKit.DefaultFormat.DiskCapacity) {
                     let resizer = ImageResizer(size:size,
                         scaleMode: scaleMode,

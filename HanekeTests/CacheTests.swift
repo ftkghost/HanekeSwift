@@ -98,11 +98,13 @@ class CacheTests: XCTestCase {
 
     func testSize_WithTwoFormats() {
         let lengths = [4, 7]
-        let formats = (0..<lengths.count).map { (index: Int) -> Format<Data> in
+        let formats = (0..<lengths.count).map { (index: Int) -> Format<NSData> in
             let formatName = self.name! + String(index)
-            return Format<Data>(name: formatName)
+            return Format<NSData>(name: formatName, diskCachePath: getDiskCachePath(self.name!))
         }
-        formats.forEach(sut.addFormat)
+        for fmt in formats {
+            sut.addFormat(fmt)
+        }
         let lenghtsByFormats = zip(lengths, formats)
 
         lenghtsByFormats.forEach { (length: Int, format: Format<Data>) in
@@ -114,7 +116,17 @@ class CacheTests: XCTestCase {
                 finished = true
             })
 
-            XCTAssert(finished, "set completed not in main queue")
+            let  (_, _, diskCache) = sut.formats[format.name]!
+            dispatch_sync(diskCache.cacheQueue) {
+                // Need to wait disk cache saved in file
+                XCTAssert(finished, "set completed not in main queue")
+                objc_sync_exit(lock)
+            }
+            // Waiting
+            objc_sync_enter(lock)
+            defer {
+                objc_sync_exit(lock)
+            }
         }
 
         XCTAssertEqual(sut.size, UInt64(lengths.reduce(0, +)))
@@ -693,8 +705,10 @@ class CacheMock<T : DataConvertible> : Cache<T> where T.Result == T, T : DataRep
     
     var expectation : XCTestExpectation?
     
-    override init(name: String) {
-        super.init(name: name)
+    init(name: String) {
+        let defaultCachePath = HanekeGlobals.getDefaultCacheBase(name, formatName: HanekeGlobals.Cache.OriginalFormatName)
+        let format = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName, diskCachePath: defaultCachePath)
+        super.init(name: name, format: format)
     }
     
     override func onMemoryWarning() {

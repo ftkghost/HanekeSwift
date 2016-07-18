@@ -11,6 +11,17 @@ import UIKit
 public struct HanekeGlobals {
     
     public static let Domain = "io.haneke"
+
+    private static var sCacheDir: String!
+    public static func getDefaultCacheBase(cacheName: String, formatName: String) -> String {
+        if sCacheDir == nil {
+            let cacheDir = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.CachesDirectory, NSSearchPathDomainMask.UserDomainMask, true)[0]
+            sCacheDir = (cacheDir as NSString).stringByAppendingPathComponent(HanekeGlobals.Domain)
+        }
+        let cacheBase = (sCacheDir as NSString).stringByAppendingPathComponent(cacheName)
+        let defaultCachePath = (cacheBase as NSString).stringByAppendingPathComponent(formatName)
+        return defaultCachePath
+    }
     
 }
 

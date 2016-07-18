@@ -39,7 +39,13 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
     
     var memoryWarningObserver : NSObjectProtocol!
     
-    public init(name: String) {
+    public convenience init(name: String) {
+        let defaultCachePath = HanekeGlobals.getDefaultCacheBase(name, formatName: HanekeGlobals.Cache.OriginalFormatName)
+        let format = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName, diskCachePath: defaultCachePath)
+        self.init(name: name, format: format)
+    }
+    
+    public init(name: String, format defaultFormat: Format<T>) {
         self.name = name
         
         let notifications = NotificationCenter.default
@@ -51,9 +57,7 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
                 self.onMemoryWarning()
             }
         )
-        
-        let originalFormat = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName)
-        self.addFormat(originalFormat)
+        self.addFormat(defaultFormat)
     }
     
     deinit {
@@ -202,7 +206,6 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
         } catch {
             Log.error(message: "Failed to create directory \(formatPath)", error: error)
         }
-        return formatPath
     }
     
     // MARK: Private

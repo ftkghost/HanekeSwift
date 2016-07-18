@@ -14,6 +14,10 @@ import OHHTTPStubs
 class UIButton_HanekeTests: DiskTestCase {
     
     var sut : UIButton!
+
+    func getDiskCachePath(formatName: String) -> String {
+        return HanekeGlobals.getDefaultCacheBase(Shared.imageCache.name, formatName: formatName)
+    }
     
     override func setUp() {
         super.setUp()
