@@ -175,6 +175,15 @@ public class Cache<T: DataConvertible where T.Result == T, T : DataRepresentable
         return size
     }
 
+    // Estimated disk cache size, it is not accurate, any data in disk cache queue is not counted.
+    public var estimatedDiskCacheSize: UInt64 {
+        var size: UInt64 = 0
+        for (_, (_, _, diskCache)) in self.formats {
+            size += diskCache.size
+        }
+        return size
+    }
+
     // MARK: Notifications
     
     func onMemoryWarning() {
