@@ -20,7 +20,7 @@ public extension HanekeGlobals {
             if let (format,_,_) = cache.formats[name] {
                 return format
             }
-            let defaultCachePath = HanekeGlobals.getDefaultCacheBase(Shared.imageCache.name, formatName: name)
+            let defaultCachePath = HanekeGlobals.getDefaultCacheBase(cacheName: Shared.imageCache.name, formatName: name)
 
             var format = Format<UIImage>(name: name,
                 diskCachePath: defaultCachePath,
