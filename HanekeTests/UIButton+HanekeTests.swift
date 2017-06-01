@@ -15,8 +15,8 @@ class UIButton_HanekeTests: DiskTestCase {
     
     var sut : UIButton!
 
-    func getDiskCachePath(formatName: String) -> String {
-        return HanekeGlobals.getDefaultCacheBase(Shared.imageCache.name, formatName: formatName)
+    override func getDiskCachePath() -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: "uibutton", formatName: self.name!)
     }
     
     override func setUp() {
@@ -96,7 +96,7 @@ class UIButton_HanekeTests: DiskTestCase {
     func testSetImage_UsingFormat_UIControlStateHighlighted() {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
-        let format = Format<UIImage>(name: self.name!, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: self.name!, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         let key = self.name!
         let expectation = self.expectation(description: self.name!)
         
@@ -207,7 +207,7 @@ class UIButton_HanekeTests: DiskTestCase {
     func testSetImageFromURL_UsingFormat() {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
-        let format = Format<UIImage>(name: self.name!, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: self.name!, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         OHHTTPStubs.stubRequests(passingTest: { _ in
             return true
             }, withStubResponse: { _ in
@@ -385,7 +385,7 @@ class UIButton_HanekeTests: DiskTestCase {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
         let key = self.name!
-        let format = Format<UIImage>(name: key, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: key, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         let expectation = self.expectation(description: key)
         
         sut.hnk_setBackgroundImage(image, key: key, state: .highlighted, format: format, success:{resultImage in
@@ -497,7 +497,7 @@ class UIButton_HanekeTests: DiskTestCase {
     func testSetBackgroundImageFromURL_UsingFormat() {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
-        let format = Format<UIImage>(name: self.name!, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: self.name!, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         OHHTTPStubs.stubRequests(passingTest: { _ in
             return true
             }, withStubResponse: { _ in

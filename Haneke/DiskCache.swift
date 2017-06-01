@@ -9,15 +9,7 @@
 import Foundation
 
 open class DiskCache {
-    
-    open class func basePath() -> String {
-        let cachesPath = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
-        let hanekePathComponent = HanekeGlobals.Domain
-        let basePath = (cachesPath as NSString).appendingPathComponent(hanekePathComponent)
-        // TODO: Do not recaculate basePath value
-        return basePath
-    }
-    
+
     open let path: String
 
     open var size : UInt64 = 0
@@ -39,6 +31,13 @@ open class DiskCache {
     public init(path: String, capacity: UInt64 = UINT64_MAX) {
         self.path = path
         self.capacity = capacity
+        do {
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+        }
+        catch {
+            Log.error(message: "Failed to create directory \(path)", error: error as NSError)
+            assert(false, "Failed to create disk cache under \(path). Error: \(error)")
+        }
         self.cacheQueue.async(execute: {
             self.calculateSize()
             self.controlCapacity()

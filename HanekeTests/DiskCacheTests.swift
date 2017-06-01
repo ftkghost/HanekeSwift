@@ -15,7 +15,8 @@ class DiskCacheTests: XCTestCase {
     var sut : DiskCache!
     
     lazy var diskCachePath: String = {
-        let diskCachePath =  (DiskCache.basePath() as NSString).appendingPathComponent(self.name!)
+        let basePath =  HanekeGlobals.getDefaultCacheBase(cacheName: "test", formatName: "diskcache")
+        let diskCachePath =  (basePath as NSString).appendingPathComponent(self.name!)
         try! FileManager.default.createDirectory(atPath: diskCachePath, withIntermediateDirectories: true, attributes: nil)
         return diskCachePath
     }()
@@ -35,12 +36,6 @@ class DiskCacheTests: XCTestCase {
         }
         try! FileManager.default.removeItem(atPath: diskCachePath)
         super.tearDown()
-    }
-    
-    func testBasePath() {
-        let cachesPath = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
-        let basePath = (cachesPath as NSString).appendingPathComponent(HanekeGlobals.Domain)
-        XCTAssertEqual(DiskCache.basePath(), basePath)
     }
     
     func testInit() {

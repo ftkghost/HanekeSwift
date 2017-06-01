@@ -147,11 +147,12 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
             if group.wait(timeout: timeout) != .success {
                 Log.error(message: "removeAll timed out waiting for disk caches")
             }
-            let path = self.cachePath
-            do {
-                try FileManager.default.removeItem(atPath: path)
-            } catch {
-                Log.error(message: "Failed to remove path \(path)", error: error)
+            for (_, (_, _, diskCache)) in self.formats {
+                do {
+                    try FileManager.default.removeItem(atPath: diskCache.path)
+                } catch {
+                    Log.error(message: "Failed to remove disk cache at path \(diskCache.path)", error: error)
+                }
             }
             if let completion = completion {
                 DispatchQueue.main.async {
@@ -194,7 +195,7 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
     
     open func addFormat(_ format : Format<T>) {
         let name = format.name
-        let formatPath = self.formatPath(withFormatName: name)
+        let formatPath = self.formatPath(withFormat: format)
         let memoryCache = NSCache<AnyObject, AnyObject>()
         let diskCache = DiskCache(path: formatPath, capacity : format.diskCapacity)
         self.formats[name] = (format, memoryCache, diskCache)
@@ -202,14 +203,8 @@ open class Cache<T: DataConvertible> where T.Result == T, T : DataRepresentable 
     
     // MARK: Internal
     
-    lazy var cachePath: String = {
-        let basePath = DiskCache.basePath()
-        let cachePath = (basePath as NSString).appendingPathComponent(self.name)
-        return cachePath
-    }()
-    
-    func formatPath(withFormatName formatName: String) -> String {
-        let formatPath = (self.cachePath as NSString).appendingPathComponent(formatName)
+    func formatPath(withFormat format: Format<T>) -> String {
+        let formatPath = format.diskCachePath
         do {
             try FileManager.default.createDirectory(atPath: formatPath, withIntermediateDirectories: true, attributes: nil)
         } catch {

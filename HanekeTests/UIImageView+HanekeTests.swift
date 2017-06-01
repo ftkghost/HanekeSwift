@@ -15,8 +15,8 @@ class UIImageView_HanekeTests: DiskTestCase {
 
     var sut : UIImageView!
 
-    func getDiskCachePath(formatName: String) -> String {
-        return HanekeGlobals.getDefaultCacheBase(Shared.imageCache.name, formatName: formatName)
+    override func getDiskCachePath() -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: Shared.imageCache.name, formatName: self.name!)
     }
     
     override func setUp() {
@@ -203,7 +203,7 @@ class UIImageView_HanekeTests: DiskTestCase {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
         let key = self.name!
-        let format = Format<UIImage>(name: key, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: key, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         let expectation = self.expectation(description: key)
         
         sut.hnk_setImage(image, key: key, format: format, success:{resultImage in
@@ -331,7 +331,7 @@ class UIImageView_HanekeTests: DiskTestCase {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
         let key = self.name!
-        let format = Format<UIImage>(name: key, diskCachePath: getDiskCachePath(self.name!), diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: key, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         let fetcher = SimpleFetcher<UIImage>(key: key, value: image)
         let expectation = self.expectation(description: key)
         sut.hnk_setImage(fromFetcher: fetcher, format: format, success: { resultImage in
@@ -485,7 +485,7 @@ class UIImageView_HanekeTests: DiskTestCase {
         
         XCTAssertNil(sut.image)
         XCTAssertEqual(sut.hnk_fetcher.key, fetcher2.key)
-        self.waitForExpectations(timeout: 1, handler: nil)
+        self.waitForExpectations(timeout: 5, handler: nil)
     }
     
     func testSetImageFromURL_Failure() {
@@ -512,7 +512,7 @@ class UIImageView_HanekeTests: DiskTestCase {
     func testSetImageFromURL_UsingFormat() {
         let image = UIImage.imageWithColor(UIColor.red)
         let expectedImage = UIImage.imageWithColor(UIColor.green)
-        let format = Format<UIImage>(name: self.name!, diskCapacity: 0) { _ in return expectedImage }
+        let format = Format<UIImage>(name: self.name!, diskCachePath: getDiskCachePath(), diskCapacity: 0) { _ in return expectedImage }
         OHHTTPStubs.stubRequests(passingTest: { _ in
             return true
             }, withStubResponse: { _ in

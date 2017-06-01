@@ -11,7 +11,11 @@ import XCTest
 @testable import Haneke
 
 class FetcherTests: XCTestCase {
-    
+
+    func getDiskCachePath() -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: "test", formatName: self.name!)
+    }
+
     func testSimpleFetcherInit() {
         let key = self.name!
         let image = UIImage.imageWithColor(UIColor.green)
@@ -57,7 +61,7 @@ class FetcherTests: XCTestCase {
         let data = Data.dataWithLength(1)
         let expectation = self.expectation(description: self.name!)
         let cache = Cache<Data>(name: self.name!)
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath())
         cache.addFormat(format)
         
         cache.fetch(key: self.name!, value: data, formatName: format.name) {

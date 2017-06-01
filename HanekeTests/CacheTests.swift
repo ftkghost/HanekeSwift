@@ -14,6 +14,10 @@ import XCTest
 class CacheTests: XCTestCase {
     
     var sut : Cache<Data>!
+
+    func getDiskCachePath() -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: "test", formatName: self.name!)
+    }
     
     override func setUp() {
         super.setUp()
@@ -30,6 +34,17 @@ class CacheTests: XCTestCase {
         }
         super.tearDown()
     }
+
+    func getSutCachePath() -> String {
+        let (_, _, diskCache) = sut.formats[HanekeGlobals.Cache.OriginalFormatName]!
+        return diskCache.path
+    }
+
+    var defaultCachePath: String {
+        get {
+            return HanekeGlobals.getDefaultCacheBase(cacheName: name!, formatName: HanekeGlobals.Cache.OriginalFormatName)
+        }
+    }
     
     func testInit() {
         let name = "name"
@@ -43,38 +58,19 @@ class CacheTests: XCTestCase {
     func testDeinit() {
         weak var _ = Cache<UIImage>(name: self.name!)
     }
-    
-    // MARK: CachePath
-    
-    func testCachePath() {
-        let expectedCachePath = (DiskCache.basePath() as NSString).appendingPathComponent(sut.name)
-        XCTAssertEqual(sut.cachePath, expectedCachePath)
-    }
-    
+
     // MARK: formatPath
     
     func testFormatPath() {
-        let formatName = self.name!
-        let expectedFormatPath = (sut.cachePath as NSString).appendingPathComponent(formatName)
+        let formatPath = getSutCachePath()
         
-        let formatPath = sut.formatPath(withFormatName: formatName)
-        
-        XCTAssertEqual(formatPath, expectedFormatPath)
-    }
-    
-    func testFormatPath_WithEmptyName() {
-        let formatName = ""
-        let expectedFormatPath = (sut.cachePath as NSString).appendingPathComponent(formatName)
-        
-        let formatPath = sut.formatPath(withFormatName: formatName)
-        
-        XCTAssertEqual(formatPath, expectedFormatPath)
+        XCTAssertEqual(formatPath, defaultCachePath)
     }
 
     // MARK: addFormat
     
     func testAddFormat() {
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath())
         
         sut.addFormat(format)
     }
@@ -84,7 +80,7 @@ class CacheTests: XCTestCase {
     func testSize_WithOneFormat() {
         let data = Data.dataWithLength(6)
         let key = self.name
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath())
         sut.addFormat(format)
 
         var finished = false
@@ -98,9 +94,9 @@ class CacheTests: XCTestCase {
 
     func testSize_WithTwoFormats() {
         let lengths = [4, 7]
-        let formats = (0..<lengths.count).map { (index: Int) -> Format<NSData> in
+        let formats = (0..<lengths.count).map { (index: Int) -> Format<Data> in
             let formatName = self.name! + String(index)
-            return Format<NSData>(name: formatName, diskCachePath: getDiskCachePath(self.name!))
+            return Format<Data>(name: formatName, diskCachePath: getDiskCachePath())
         }
         for fmt in formats {
             sut.addFormat(fmt)
@@ -115,9 +111,9 @@ class CacheTests: XCTestCase {
             sut.set(value: data, key: key!, formatName : format.name, success: { _ in
                 finished = true
             })
-
+            let lock = NSObject()
             let  (_, _, diskCache) = sut.formats[format.name]!
-            dispatch_sync(diskCache.cacheQueue) {
+            diskCache.cacheQueue.sync() {
                 // Need to wait disk cache saved in file
                 XCTAssert(finished, "set completed not in main queue")
                 objc_sync_exit(lock)
@@ -152,7 +148,7 @@ class CacheTests: XCTestCase {
         let data = Data.dataWithLength(6)
         let expectedData = Data.dataWithLength(7)
         let key = self.name!
-        let format = Format<Data>(name: self.name!, transform: { _ in return expectedData })
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath(), transform: { _ in return expectedData })
         sut.addFormat(format)
         let expectation = self.expectation(description: self.name!)
         
@@ -291,7 +287,7 @@ class CacheTests: XCTestCase {
     func testFetch_AfterClearingMemoryCache_WithKeyAndFormatWithoutDiskCapacity_ExpectFailure() {
         let key = self.name!
         let data = Data.dataWithLength(8)
-        let format = Format<Data>(name: key, diskCapacity: 0)
+        let format = Format<Data>(name: key, diskCachePath: getDiskCachePath(), diskCapacity: 0)
         sut.addFormat(format)
         let expectation = self.expectation(description: "fetch image")
         sut.set(value: data, key: key, formatName: format.name)
@@ -310,7 +306,7 @@ class CacheTests: XCTestCase {
     func testFetch_AfterClearingMemoryCache_WithKeyAndFormatWithDiskCapacity_ExpectSuccess() {
         let key = self.name!
         let data = Data.dataWithLength(9)
-        let format = Format<Data>(name: key)
+        let format = Format<Data>(name: key, diskCachePath: getDiskCachePath())
         sut.addFormat(format)
         let expectation = self.expectation(description: key)
         sut.set(value: data, key: key, formatName: format.name)
@@ -429,7 +425,7 @@ class CacheTests: XCTestCase {
         let data = Data.dataWithLength(12)
         let formattedData = Data.dataWithLength(13)
         let fetcher = SimpleFetcher<Data>(key: key, value: data)
-        let format = Format<Data>(name: key, transform: { _ in
+        let format = Format<Data>(name: key, diskCachePath: getDiskCachePath(), transform: { _ in
             return formattedData
         })
         sut.addFormat(format)
@@ -495,7 +491,7 @@ class CacheTests: XCTestCase {
     
     func testRemove_WithExistingKeyInFormat() {
         let key = self.name!
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath())
         sut.addFormat(format)
         sut.set(value:  Data.dataWithLength(15), key: key, formatName: format.name)
         let expectation = self.expectation(description: "fetch")
@@ -513,7 +509,7 @@ class CacheTests: XCTestCase {
     
     func testRemove_WithExistingKeyInAnotherFormat() {
         let key = self.name!
-        let format = Format<Data>(name: key)
+        let format = Format<Data>(name: key, diskCachePath: getDiskCachePath())
         sut.addFormat(format)
         sut.set(value: Data.dataWithLength(16), key: key)
         let expectation = self.expectation(description: "fetch")
@@ -582,8 +578,9 @@ class CacheTests: XCTestCase {
     }
 
     func testRemoveAll_WhenDataAlreadyPresentInCachePath() {
-        let path = (sut.cachePath as NSString).appendingPathComponent("test")
+        let path = URL(fileURLWithPath: defaultCachePath).appendingPathComponent("test.data").absoluteString
         let data = Data.dataWithLength(1)
+        Log.debug(message: path)
         try? data.write(to: URL(fileURLWithPath: path), options: [.atomic])
         XCTAssertTrue(FileManager.default.fileExists(atPath: path))
 
@@ -706,7 +703,7 @@ class CacheMock<T : DataConvertible> : Cache<T> where T.Result == T, T : DataRep
     var expectation : XCTestExpectation?
     
     init(name: String) {
-        let defaultCachePath = HanekeGlobals.getDefaultCacheBase(name, formatName: HanekeGlobals.Cache.OriginalFormatName)
+        let defaultCachePath = HanekeGlobals.getDefaultCacheBase(cacheName: name, formatName: HanekeGlobals.Cache.OriginalFormatName)
         let format = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName, diskCachePath: defaultCachePath)
         super.init(name: name, format: format)
     }

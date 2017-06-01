@@ -14,7 +14,7 @@ class DiskFetcherTests: DiskTestCase {
     
     var sut : DiskFetcher<UIImage>!
     var path: String!
-
+    
     override func setUp() {
         super.setUp()
         path = self.uniquePath()
@@ -158,7 +158,7 @@ class DiskFetcherTests: DiskTestCase {
         let path = self.writeData(data)
         let expectation = self.expectation(description: self.name!)
         let cache = Cache<Data>(name: self.name!)
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath())
         cache.addFormat(format)
         
         _ = cache.fetch(path: path, formatName: format.name, failure: {_ in

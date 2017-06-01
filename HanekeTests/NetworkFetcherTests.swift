@@ -15,7 +15,11 @@ class NetworkFetcherTests: XCTestCase {
 
     let URL = Foundation.URL(string: "http://haneke.io/image.jpg")!
     var sut : NetworkFetcher<UIImage>!
-    
+
+    func getDiskCachePath(formatName: String) -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: "test", formatName: formatName)
+    }
+
     override func setUp() {
         super.setUp()
         sut = NetworkFetcher(URL: URL)
@@ -254,7 +258,7 @@ class NetworkFetcherTests: XCTestCase {
         })
         let expectation = self.expectation(description: self.name!)
         let cache = Cache<Data>(name: self.name!)
-        let format = Format<Data>(name: self.name!)
+        let format = Format<Data>(name: self.name!, diskCachePath: getDiskCachePath(formatName: self.name!))
         cache.addFormat(format)
 
         cache.fetch(URL: URL, formatName: format.name, failure: {_ in

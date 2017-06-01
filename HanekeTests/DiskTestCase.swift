@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Haneke
 
 class DiskTestCase : XCTestCase {
  
@@ -15,6 +16,10 @@ class DiskTestCase : XCTestCase {
         let directoryPath = (documentsPath as NSString).appendingPathComponent(self.name!)
         return directoryPath
     }()
+
+    func getDiskCachePath() -> String {
+        return HanekeGlobals.getDefaultCacheBase(cacheName: "test", formatName: self.name!)
+    }
     
     override func setUp() {
         super.setUp()
